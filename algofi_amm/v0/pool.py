@@ -74,6 +74,9 @@ class Pool():
             self.flash_loan_fee = pool_state[pool_strings.flash_loan_fee]
             self.max_flash_loan_ratio = pool_state[pool_strings.max_flash_loan_ratio]
 
+        # Refresh state after initialization
+        self.refresh_state()
+
     def refresh_metadata(self):
         """Refresh the metadata of the pool (e.g. if now initialized)
         """

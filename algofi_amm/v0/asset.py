@@ -19,8 +19,13 @@ class Asset():
 
         self.asset_id = asset_id
         if asset_id == 1:
+            self.creator = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
             self.decimals = ALGO_DECIMALS
+            self.default_frozen = False
+            self.freeze = None
+            self.manager = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
             self.name = "Algorand"
+            self.reserve = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ"
             self.total = 10000000000
             self.unit_name = "ALGO"
             self.url = "https://www.algorand.com/"
