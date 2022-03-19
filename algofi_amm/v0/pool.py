@@ -63,6 +63,9 @@ class Pool:
             else:
                 self.pool_status = PoolStatus.ACTIVE
                 self.application_id = self.nanoswap_pools[key]
+                self.address = get_application_address(self.application_id)
+                self.init_state()
+                self.refresh_state()
 
         else:
             self.logic_sig = LogicSigAccount(generate_logic_sig(asset1.asset_id, asset2.asset_id, self.manager_application_id, self.validator_index))
@@ -78,10 +81,14 @@ class Pool:
                         (logic_sig_local_state[manager_strings.registered_asset_2_id] != asset2.asset_id) or \
                         (logic_sig_local_state[manager_strings.validator_index] != self.validator_index):
                     raise Exception("Logic sig state does not match as expected")
-            self.application_id = logic_sig_local_state[manager_strings.registered_pool_id]
+                self.application_id = logic_sig_local_state[manager_strings.registered_pool_id]
+                self.address = get_application_address(self.application_id)
+                self.init_state()
+                self.refresh_state()
 
-        self.address = get_application_address(self.application_id)
-
+    def init_state(self):
+        """Get global state
+        """
         # get global state
         pool_state = get_application_global_state(self.algod, self.application_id)
         self.lp_asset_id = pool_state[pool_strings.lp_id]
@@ -90,8 +97,6 @@ class Pool:
         self.flash_loan_fee = pool_state[pool_strings.flash_loan_fee]
         self.max_flash_loan_ratio = pool_state[pool_strings.max_flash_loan_ratio]
 
-        # refresh state
-        self.refresh_state()
 
     def refresh_metadata(self):
         """Refresh the metadata of the pool (e.g. if now initialized)
@@ -114,13 +119,7 @@ class Pool:
 
         self.address = get_application_address(self.application_id)
 
-        # get global state
-        pool_state = get_application_global_state(self.algod, self.application_id)
-        self.lp_asset_id = pool_state[pool_strings.lp_id]
-        self.admin = pool_state[pool_strings.admin]
-        self.reserve_factor = pool_state[pool_strings.reserve_factor]
-        self.flash_loan_fee = pool_state[pool_strings.flash_loan_fee]
-        self.max_flash_loan_ratio = pool_state[pool_strings.max_flash_loan_ratio]
+        self.init_state()
 
     def refresh_state(self):
         """Refresh the global state of the pool
