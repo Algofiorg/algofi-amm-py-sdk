@@ -150,12 +150,13 @@ class Pool:
             timestamp = block["block"]["ts"]
             self.t = timestamp
 
-    def refresh_state(self):
+    def refresh_state(self, block=None):
         """Refresh the global state of the pool
         """
 
         # load pool state
-        pool_state = get_application_global_state(self.indexer, self.application_id)
+        indexer_client = self.historical_indexer if block else self.indexer
+        pool_state = get_application_global_state(indexer_client, self.application_id, block=block)
         self.asset1_balance = pool_state[pool_strings.balance_1]
         self.asset2_balance = pool_state[pool_strings.balance_2]
         self.lp_circulation = pool_state[pool_strings.lp_circulation]

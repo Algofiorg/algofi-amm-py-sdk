@@ -64,34 +64,56 @@ def send_and_wait(algod_client, stxns):
     return transaction_response
 
 
-def get_application_global_state(indexer_client, application_id):
+def format_state(state):
+    """Returns state dict formatted to human-readable strings
+    :param state: dict of state returned by read_local_state or read_global_state
+    :type state: dict
+    :return: dict of state with keys + values formatted from bytes to utf-8 strings
+    :rtype: dict
+    """
+    formatted = {}
+    for item in state:
+        key = item['key']
+        value = item['value']
+        try:
+            formatted_key = b64decode(key).decode('utf-8')
+        except:
+            formatted_key = b64decode(key)
+        if value['type'] == 1:
+            # byte string
+            try:
+                formatted_value = b64decode(value['bytes']).decode('utf-8')
+            except:
+                formatted_value=value['bytes']
+            formatted[formatted_key] = formatted_value
+        else:
+            # integer
+            formatted[formatted_key] = value['uint']
+    return formatted
+
+
+def get_application_global_state(indexer_client, application_id, block=None):
     """Returns dictionary of global state for a given application
 
     :param indexer_client: :class:`IndexerClient` object for interacting with network
     :type indexer_client: :class:`IndexerClient`
     :param application_id: application id
     :type application_id: int
+    :param block: block to query historical state from, optional
+    :type block: int
     :return: dictionary of global state for given application
     :rtype: dict
     """
 
     try:
-        application_info = indexer_client.applications(application_id).get("application", {})
+        application_info = indexer_client.applications(application_id, round_num=block).get("application", {})
     except:
         raise Exception("Application does not exist.")
 
-    formatted_global_state = {}
-    application_global_state = application_info["params"]["global-state"]
-    for keyvalue in application_global_state:
-        key, value = keyvalue["key"], keyvalue["value"]
-        key_formatted = b64decode(key).decode("utf-8")
-        value = value["uint"] if value["type"] == 2 else value["bytes"]
-        formatted_global_state[key_formatted] = value
-
-    return formatted_global_state
+    return format_state(application_info["params"]["global-state"])
 
 
-def get_application_local_state(indexer_client, address, application_id):
+def get_application_local_state(indexer_client, address, application_id, block=None):
     """Returns dictionary of global state for a given application
 
     :param indexer_client: :class:`IndexerClient` object for interacting with network
@@ -100,24 +122,23 @@ def get_application_local_state(indexer_client, address, application_id):
     :type address: str
     :param application_id: application id
     :type application_id: int
+    :param block: block to query historical state from, optional
+    :type block: int
     :return: dictionary of local state of account for given application
     :rtype: dict
     """
     
     try:
-        account_info = indexer_client.account_info(address).get("account", {})
-        application_local_state = account_info["apps-local-state"]
-        formatted_local_state = {}
-        for state in application_local_state:
-            if (state["id"] == application_id) and (state["key-value"]):
-                for keyvalue in state["key-value"]:
-                    key, value = keyvalue["key"], keyvalue["value"]
-                    key_formatted = b64decode(key).decode("utf-8")
-                    value = value["uint"] if value["type"] == 2 else value["bytes"]
-                    formatted_local_state[key_formatted] = value
-        return formatted_local_state
+        results = indexer_client.account_info(address, round_num=block).get("account", {})
     except:
-        return {}
+        raise Exception("Account does not exist.")
+
+    for local_state in results['apps-local-state']:
+        if local_state['id'] == application_id:
+            if 'key-value' not in local_state:
+                return {}
+            return format_state(local_state['key-value'])
+    return {}
 
 
 def get_account_balances(indexer_client, address, filter_zero_balances=False):
